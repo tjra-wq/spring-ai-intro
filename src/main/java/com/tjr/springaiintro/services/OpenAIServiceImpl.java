@@ -1,14 +1,13 @@
 package com.tjr.springaiintro.services;
 
-import com.tjr.springaiintro.model.Answer;
-import com.tjr.springaiintro.model.GetCapitalRequest;
-import com.tjr.springaiintro.model.Question;
+import com.tjr.springaiintro.model.*;
 import groovy.util.logging.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -25,6 +24,12 @@ public class OpenAIServiceImpl implements OpenAIService {
 
     @Value("classpath:templates/get-capital-prompt.st")
     private Resource getCapitalPrompt;
+
+//    @Value("classpath:templates/get-capital-with-info-prompt.st")
+//    private Resource getCapitalWithInfoPrompt;
+
+//    @Autowired
+//    ObjectMapper objectMapper;
 
     @Override
     public String getAnswer(String question) {
@@ -47,14 +52,31 @@ public class OpenAIServiceImpl implements OpenAIService {
     }
 
     @Override
-    public Answer getCapital(GetCapitalRequest stateOrCountry) {
-        log.info("Question: " + stateOrCountry);
-//        PromptTemplate promptTemplate = new PromptTemplate(stateOrCountry.stateOrCountry());
-//        PromptTemplate promptTemplate = new PromptTemplate("What is the Capital of " + stateOrCountry.stateOrCountry() + "?");
+    public GetCapitalResponse getCapital(GetCapitalRequest getCapitalRequest) {
+        BeanOutputConverter<GetCapitalResponse> beanOutputConverter = new BeanOutputConverter<>(GetCapitalResponse.class);
+        String format = beanOutputConverter.getFormat();
+        log.info("Question (answer will be in json): " + getCapitalRequest);
+
         PromptTemplate promptTemplate = new PromptTemplate(getCapitalPrompt);
-        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", stateOrCountry.stateOrCountry()));
+        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", getCapitalRequest.stateOrCountry(),
+                                                    "format", format));
 
         ChatResponse chatResponse = chatModel.call(prompt);
-        return new Answer(chatResponse.getResult().getOutput().getContent());
+
+        return beanOutputConverter.convert(chatResponse.getResult().getOutput().getContent());
+    }
+
+    @Override
+    public GetCapitalWithInfoResponse getCapitalWithInfo(GetCapitalRequest getCapitalRequest) {
+        log.info("Question: " + getCapitalRequest);
+        BeanOutputConverter<GetCapitalWithInfoResponse> beanOutputConverter = new BeanOutputConverter<>(GetCapitalWithInfoResponse.class);
+        String format = beanOutputConverter.getFormat();
+
+        PromptTemplate promptTemplate = new PromptTemplate(getCapitalPrompt);
+        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", getCapitalRequest.stateOrCountry(),
+                                                    "format", format));
+        ChatResponse chatResponse = chatModel.call(prompt);
+
+        return beanOutputConverter.convert(chatResponse.getResult().getOutput().getContent());
     }
 }
