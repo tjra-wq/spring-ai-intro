@@ -11,8 +11,11 @@ class OpenAIServiceImplTest {
 
     @Test
     void getAnswer() {
-        String answer = openAIService.getAnswer("Tell me a joke");
+        String answer = openAIService.getAnswer("Write a python program to add two numbers");
         System.out.println("Answer: " + answer);
+
+        String answer2 = openAIService.getAnswer("Write the game snake and ladder in python");
+        System.out.println("Answer: " + answer2);
 
     }
 }
